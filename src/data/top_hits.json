@@ -24,31 +24,7 @@
     "singers": "Ravyn Lenae",
     "language": "english"
   },
-  {
-    "id": "TcDP-KUl",
-    "title": "Starboy",
-    "image": [
-      {
-        "quality": "50x50",
-        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-50x50.jpg"
-      },
-      {
-        "quality": "150x150",
-        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-150x150.jpg"
-      },
-      {
-        "quality": "500x500",
-        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-500x500.jpg"
-      }
-    ],
-    "album": "The Highlights",
-    "url": "https://www.jiosaavn.com/song/starboy/JAsvYVl7Yl8",
-    "type": "song",
-    "description": "The Weeknd · The Highlights",
-    "primaryArtists": "The Weeknd",
-    "singers": "The Weeknd",
-    "language": "english"
-  },
+
   {
     "id": "VaNhRJHr",
     "title": "Die With A Smile",
@@ -100,6 +76,31 @@
     "language": "english"
   },
   {
+    "id": "TcDP-KUl",
+    "title": "Starboy",
+    "image": [
+      {
+        "quality": "50x50",
+        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-50x50.jpg"
+      },
+      {
+        "quality": "150x150",
+        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-150x150.jpg"
+      },
+      {
+        "quality": "500x500",
+        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-500x500.jpg"
+      }
+    ],
+    "album": "The Highlights",
+    "url": "https://www.jiosaavn.com/song/starboy/JAsvYVl7Yl8",
+    "type": "song",
+    "description": "The Weeknd · The Highlights",
+    "primaryArtists": "The Weeknd",
+    "singers": "The Weeknd",
+    "language": "english"
+  },
+  {
     "id": "JR8ew5Yw",
     "title": "BIRDS OF A FEATHER",
     "image": [
@@ -125,28 +126,28 @@
     "language": "english"
   },
   {
-    "id": "pizXlfUB",
-    "title": "Blinding Lights",
+    "id": "QC7UN4ir",
+    "title": "Stereo Hearts (feat. Adam Levine)",
     "image": [
       {
         "quality": "50x50",
-        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-50x50.jpg"
+        "url": "https://c.saavncdn.com/947/Stereo-Hearts-feat-Adam-Levine--English-2011-20190607045815-50x50.jpg"
       },
       {
         "quality": "150x150",
-        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-150x150.jpg"
+        "url": "https://c.saavncdn.com/947/Stereo-Hearts-feat-Adam-Levine--English-2011-20190607045815-150x150.jpg"
       },
       {
         "quality": "500x500",
-        "url": "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-500x500.jpg"
+        "url": "https://c.saavncdn.com/947/Stereo-Hearts-feat-Adam-Levine--English-2011-20190607045815-500x500.jpg"
       }
     ],
-    "album": "The Highlights",
-    "url": "https://www.jiosaavn.com/song/blinding-lights/AAERaRhWYnE",
+    "album": "Stereo Hearts (feat. Adam Levine)",
+    "url": "https://www.jiosaavn.com/song/stereo-hearts-feat.-adam-levine/IStcZDoEXkE",
     "type": "song",
-    "description": "The Weeknd · The Highlights",
-    "primaryArtists": "The Weeknd",
-    "singers": "The Weeknd",
+    "description": "Gym Class Heroes · Stereo Hearts (feat. Adam Levine)",
+    "primaryArtists": "Gym Class Heroes",
+    "singers": "",
     "language": "english"
   },
   {

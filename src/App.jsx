@@ -5,7 +5,12 @@ import { SearchResults } from "./components/SearchResults";
 import { PlayerBar } from "./components/PlayerBar";
 import { LyricsView } from "./components/LyricsView";
 import { FullScreenPlayer } from "./components/FullScreenPlayer";
-import { searchMusic, fetchSongDetails, fetchSongLyrics } from "./services/api";
+import {
+  searchMusic,
+  fetchSongDetails,
+  fetchSongSuggestions,
+  fetchSongLyrics,
+} from "./services/api";
 import { parseLrc } from "./utils/lrcParser";
 import { extractArtworkColors } from "./utils/colorExtractor";
 
@@ -33,6 +38,9 @@ export function App() {
   const [selectedQuality, setSelectedQuality] = useState("320kbps");
   const [availableQualities, setAvailableQualities] = useState([]);
   const [queue, setQueue] = useState([]);
+  const [suggestionQueue, setSuggestionQueue] = useState([]);
+  const [songHistory, setSongHistory] = useState([]);
+  const MAX_HISTORY_ITEMS = 5;
 
   // Dynamic matching color gradient from song image
   const [palette, setPalette] = useState(null);
@@ -102,8 +110,38 @@ export function App() {
   };
 
   // Play Song (sends song details + lyrics request + extracts matching colors)
+  const pushSongToHistory = useCallback((track) => {
+    if (!track?.id) return;
+
+    setSongHistory((prev) => {
+      const next = prev.filter((item) => item?.id !== track.id);
+      return [track, ...next].slice(0, MAX_HISTORY_ITEMS);
+    });
+  }, []);
+
+  const loadSuggestionQueue = useCallback(
+    async (songId, currentSong = null) => {
+      if (!songId) return [];
+
+      try {
+        const suggestions = await fetchSongSuggestions(songId, 5);
+        const nextBatch = suggestions
+          .filter((item) => item.id !== songId)
+          .slice(0, 5);
+        const batch = currentSong ? [currentSong, ...nextBatch] : nextBatch;
+        setSuggestionQueue(batch);
+        return batch;
+      } catch (err) {
+        console.warn("Failed to load suggestion queue:", err);
+        return [];
+      }
+    },
+    [],
+  );
+
   const handlePlaySong = async (song) => {
     if (!song) return;
+    const shouldLoadSuggestions = true;
 
     const songId = song.id;
     const title = song.title || song.name;
@@ -212,6 +250,20 @@ export function App() {
       };
 
       setCurrentTrack(newTrack);
+      pushSongToHistory({
+        id: newTrack.id,
+        title: newTrack.title,
+        artist: newTrack.artist,
+        album: newTrack.album,
+        artwork: newTrack.artwork,
+        duration: newTrack.duration,
+        streamUrl: newTrack.streamUrl,
+        downloadUrls: newTrack.downloadUrls,
+        rawDetails: newTrack.rawDetails,
+      });
+      if (shouldLoadSuggestions) {
+        await loadSuggestionQueue(newTrack.id, newTrack);
+      }
 
       if (audioRef.current && streamUrl) {
         audioRef.current.src = streamUrl;
@@ -377,24 +429,78 @@ export function App() {
     audioRef.current.muted = nextMute;
   };
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
+    if (!currentTrack) return;
+
+    const currentIndex = suggestionQueue.findIndex(
+      (s) => s.id === currentTrack?.id,
+    );
+
+    if (suggestionQueue.length > 0 && currentIndex >= 0) {
+      if (currentIndex < suggestionQueue.length - 1) {
+        const nextTrack = suggestionQueue[currentIndex + 1];
+        await handlePlaySong(nextTrack, false);
+        return;
+      }
+
+      const freshSuggestions = await loadSuggestionQueue(
+        currentTrack.id,
+        currentTrack,
+      );
+      if (freshSuggestions.length > 0) {
+        const nextTrack = freshSuggestions[0];
+        await handlePlaySong(nextTrack);
+        return;
+      }
+    }
+
+    if (suggestionQueue.length > 0 && currentIndex === -1) {
+      const nextTrack = suggestionQueue[0];
+      await handlePlaySong(nextTrack, false);
+      return;
+    }
+
     if (queue.length === 0) return;
-    const currentIndex = queue.findIndex((s) => s.id === currentTrack?.id);
+    const indexInQueue = queue.findIndex((s) => s.id === currentTrack?.id);
     let nextIndex;
     if (isShuffle) {
       nextIndex = Math.floor(Math.random() * queue.length);
     } else {
-      nextIndex = currentIndex >= queue.length - 1 ? 0 : currentIndex + 1;
+      nextIndex = indexInQueue >= queue.length - 1 ? 0 : indexInQueue + 1;
     }
     handlePlaySong(queue[nextIndex]);
-  }, [queue, currentTrack, isShuffle]);
+  }, [queue, currentTrack, isShuffle, suggestionQueue, loadSuggestionQueue]);
 
   const handlePrev = useCallback(() => {
+    if (songHistory.length > 1) {
+      const currentIndex = songHistory.findIndex(
+        (s) => s.id === currentTrack?.id,
+      );
+      const prevIndex =
+        currentIndex <= 0 ? songHistory.length - 1 : currentIndex - 1;
+      const prevTrack = songHistory[prevIndex];
+      if (prevTrack && prevTrack.id !== currentTrack.id) {
+        handlePlaySong(prevTrack, false);
+        return;
+      }
+    }
+
+    if (suggestionQueue.length > 0 && currentTrack) {
+      const currentIndex = suggestionQueue.findIndex(
+        (s) => s.id === currentTrack.id,
+      );
+      if (currentIndex > 0) {
+        const prevTrack = suggestionQueue[currentIndex - 1];
+        handlePlaySong(prevTrack, false);
+        return;
+      }
+    }
+
     if (queue.length === 0) return;
     const currentIndex = queue.findIndex((s) => s.id === currentTrack?.id);
     let prevIndex = currentIndex <= 0 ? queue.length - 1 : currentIndex - 1;
-    handlePlaySong(queue[prevIndex]);
-  }, [queue, currentTrack]);
+    handlePlaySong(queue[prevIndex], false);
+  }, [queue, currentTrack, songHistory, suggestionQueue]);
 
   const handleSongEnded = () => {
     if (repeatMode === "one") {
@@ -405,11 +511,23 @@ export function App() {
     } else if (repeatMode === "all") {
       handleNext();
     } else {
-      const currentIndex = queue.findIndex((s) => s.id === currentTrack?.id);
-      if (currentIndex < queue.length - 1) {
+      const currentIndex = suggestionQueue.findIndex(
+        (s) => s.id === currentTrack?.id,
+      );
+      if (currentIndex >= 0 && currentIndex < suggestionQueue.length - 1) {
+        handleNext();
+      } else if (
+        currentIndex >= 0 &&
+        currentIndex === suggestionQueue.length - 1
+      ) {
         handleNext();
       } else {
-        setIsPlaying(false);
+        const queueIndex = queue.findIndex((s) => s.id === currentTrack?.id);
+        if (queueIndex < queue.length - 1) {
+          handleNext();
+        } else {
+          setIsPlaying(false);
+        }
       }
     }
   };

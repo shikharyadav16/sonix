@@ -138,6 +138,86 @@ export async function fetchSongDetails(songId) {
 }
 
 /**
+ * Fetch suggested songs for a given song id using the suggestions endpoint.
+ * Returns a normalized list that matches the app's play-song contract.
+ */
+export async function fetchSongSuggestions(songId, limit = 5) {
+  if (!songId) return [];
+
+  const url = `/api/songs/${encodeURIComponent(songId)}/suggestions?id=${encodeURIComponent(songId)}&limit=${encodeURIComponent(limit)}`;
+  const startTime = performance.now();
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        accept: "*/*",
+      },
+    });
+
+    const elapsed = Math.round(performance.now() - startTime);
+
+    if (!res.ok) {
+      throw new Error(
+        `Suggestions request failed: HTTP ${res.status} ${res.statusText}`,
+      );
+    }
+
+    const json = await res.json();
+    const data = Array.isArray(json?.data) ? json.data : [];
+
+    const normalized = data.slice(0, limit).map((song) => ({
+      id: song.id,
+      title: song.name || song.title || "Unknown title",
+      name: song.name || song.title || "Unknown title",
+      artist:
+        song.artist ||
+        song.primaryArtists ||
+        (song.artists?.primary || []).map((a) => a.name).join(", ") ||
+        "Unknown artist",
+      primaryArtists:
+        song.primaryArtists ||
+        song.artist ||
+        (song.artists?.primary || []).map((a) => a.name).join(", ") ||
+        "Unknown artist",
+      album: song.album?.name || song.album || "",
+      duration: song.duration || 0,
+      image: song.image || [],
+      downloadUrl: Array.isArray(song.downloadUrl) ? song.downloadUrl : [],
+      audioUrl:
+        song.downloadUrl?.find((d) => d.quality === "320kbps")?.url ||
+        song.downloadUrl?.[song.downloadUrl.length - 1]?.url ||
+        null,
+    }));
+
+    recordRequest("song", {
+      url,
+      songId,
+      status: res.status,
+      latencyMs: elapsed,
+      response: json,
+      songData: normalized,
+      audioUrls: normalized.flatMap((song) => song.downloadUrl || []),
+      error: null,
+    });
+
+    return normalized;
+  } catch (err) {
+    const elapsed = Math.round(performance.now() - startTime);
+    recordRequest("song", {
+      url,
+      songId,
+      status: "Error",
+      latencyMs: elapsed,
+      response: null,
+      songData: null,
+      error: err.message,
+    });
+    return [];
+  }
+}
+
+/**
  * Clean artist name (remove 'feat.', '&', etc. for better LRCLIB hit rate)
  */
 function cleanArtist(artist) {
