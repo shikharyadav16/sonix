@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Play,
   Pause,
@@ -14,14 +14,16 @@ import {
   Download,
   Music2,
   Disc,
-} from 'lucide-react';
-import { formatTime, getActiveLyricIndex } from '../utils/lrcParser';
+} from "lucide-react";
+import { formatTime, getActiveLyricIndex } from "../utils/lrcParser";
 
 export function FullScreenPlayer({
   isOpen,
   onClose,
   currentTrack,
   isPlaying,
+  isTrackLoading,
+  isBuffering,
   currentTime,
   duration,
   volume,
@@ -41,7 +43,7 @@ export function FullScreenPlayer({
   onToggleMute,
   onDownload,
 }) {
-  const [activeTab, setActiveTab] = useState('player'); // 'player' | 'lyrics'
+  const [activeTab, setActiveTab] = useState("player"); // 'player' | 'lyrics'
   const activeLineRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const progressRef = useRef(null);
@@ -50,15 +52,21 @@ export function FullScreenPlayer({
 
   // Auto-scroll active lyric line smoothly into center view when on lyrics tab
   useEffect(() => {
-    if (activeTab === 'lyrics' && activeLineRef.current && scrollContainerRef.current) {
+    if (
+      activeTab === "lyrics" &&
+      activeLineRef.current &&
+      scrollContainerRef.current
+    ) {
       const container = scrollContainerRef.current;
       const activeEl = activeLineRef.current;
       const targetTop =
-        activeEl.offsetTop - (container.clientHeight / 2) + (activeEl.clientHeight / 2);
+        activeEl.offsetTop -
+        container.clientHeight / 2 +
+        activeEl.clientHeight / 2;
 
       container.scrollTo({
         top: Math.max(0, targetTop),
-        behavior: 'smooth',
+        behavior: "smooth",
       });
     }
   }, [activeIndex, activeTab]);
@@ -74,13 +82,18 @@ export function FullScreenPlayer({
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const artworkUrl = currentTrack.artwork || 'https://www.jiosaavn.com/_i/3.0/artist-default-music.png';
+  const artworkUrl =
+    currentTrack.artwork ||
+    "https://www.jiosaavn.com/_i/3.0/artist-default-music.png";
+  const showLoadingState = Boolean(isTrackLoading || isBuffering);
 
   return (
     <div
       className="fullscreen-player-overlay"
       style={{
-        background: palette?.fullGradient || 'radial-gradient(circle at center, #1a1e36 0%, #080808 100%)',
+        background:
+          palette?.fullGradient ||
+          "radial-gradient(circle at center, #1a1e36 0%, #080808 100%)",
       }}
     >
       {/* Ambient background blurred artwork */}
@@ -102,16 +115,16 @@ export function FullScreenPlayer({
         <div className="fullscreen-tab-switch">
           <button
             type="button"
-            className={`fs-tab-pill ${activeTab === 'player' ? 'active' : ''}`}
-            onClick={() => setActiveTab('player')}
+            className={`fs-tab-pill ${activeTab === "player" ? "active" : ""}`}
+            onClick={() => setActiveTab("player")}
           >
             <Disc size={16} />
             <span>Player</span>
           </button>
           <button
             type="button"
-            className={`fs-tab-pill ${activeTab === 'lyrics' ? 'active' : ''}`}
-            onClick={() => setActiveTab('lyrics')}
+            className={`fs-tab-pill ${activeTab === "lyrics" ? "active" : ""}`}
+            onClick={() => setActiveTab("lyrics")}
           >
             <FileText size={16} />
             <span>Lyrics</span>
@@ -133,19 +146,19 @@ export function FullScreenPlayer({
 
       {/* Main Full-Screen Section: Switchable between Player and Lyrics */}
       <div className="fullscreen-content-container">
-        {activeTab === 'player' ? (
+        {activeTab === "player" ? (
           /* SECTION 1: Full-Screen Player View */
           <div className="fullscreen-player-view">
             <div
               className="fullscreen-artwork-wrapper"
               style={{
-                boxShadow: `0 24px 70px -10px ${palette?.glowRgba || 'rgba(0,0,0,0.85)'}`,
+                boxShadow: `0 24px 70px -10px ${palette?.glowRgba || "rgba(0,0,0,0.85)"}`,
               }}
             >
               <img
                 src={artworkUrl}
                 alt={currentTrack.title}
-                className={`fullscreen-artwork ${isPlaying ? 'pulse-glow' : ''}`}
+                className={`fullscreen-artwork ${isPlaying ? "pulse-glow" : ""}`}
               />
             </div>
 
@@ -153,9 +166,7 @@ export function FullScreenPlayer({
               <h1 className="fullscreen-song-title" title={currentTrack.title}>
                 {currentTrack.title}
               </h1>
-              <h2 className="fullscreen-artist-name">
-                {currentTrack.artist}
-              </h2>
+              <h2 className="fullscreen-artist-name">{currentTrack.artist}</h2>
               {currentTrack.album && (
                 <div className="fullscreen-album-name">
                   {currentTrack.album}
@@ -174,7 +185,7 @@ export function FullScreenPlayer({
                     <div
                       key={idx}
                       ref={isActive ? activeLineRef : null}
-                      className={`yt-lyric-line-full ${isActive ? 'active' : ''}`}
+                      className={`yt-lyric-line-full ${isActive ? "active" : ""}`}
                       onClick={() => onSeek(line.time)}
                       title={`Jump to ${line.formattedTime}`}
                     >
@@ -213,7 +224,7 @@ export function FullScreenPlayer({
                 className="fs-track-fill"
                 style={{
                   width: `${progressPercent}%`,
-                  background: palette?.primaryRgb || '#ffffff',
+                  background: palette?.primaryRgb || "#ffffff",
                 }}
               />
             </div>
@@ -228,12 +239,20 @@ export function FullScreenPlayer({
             <button
               id="fullscreen-toggle-lyrics-btn"
               type="button"
-              className={`fs-icon-btn ${activeTab === 'lyrics' ? 'active' : ''}`}
-              onClick={() => setActiveTab(activeTab === 'player' ? 'lyrics' : 'player')}
-              title={activeTab === 'player' ? 'Switch to Lyrics' : 'Switch to Player'}
+              className={`fs-icon-btn ${activeTab === "lyrics" ? "active" : ""}`}
+              onClick={() =>
+                setActiveTab(activeTab === "player" ? "lyrics" : "player")
+              }
+              title={
+                activeTab === "player" ? "Switch to Lyrics" : "Switch to Player"
+              }
             >
-              {activeTab === 'player' ? <FileText size={18} /> : <Disc size={18} />}
-              <span>{activeTab === 'player' ? 'Lyrics' : 'Player'}</span>
+              {activeTab === "player" ? (
+                <FileText size={18} />
+              ) : (
+                <Disc size={18} />
+              )}
+              <span>{activeTab === "player" ? "Lyrics" : "Player"}</span>
             </button>
           </div>
 
@@ -241,7 +260,7 @@ export function FullScreenPlayer({
           <div className="fs-main-controls">
             <button
               type="button"
-              className={`fs-ctrl-btn ${isShuffle ? 'active' : ''}`}
+              className={`fs-ctrl-btn ${isShuffle ? "active" : ""}`}
               onClick={onToggleShuffle}
               title="Shuffle"
             >
@@ -261,15 +280,20 @@ export function FullScreenPlayer({
             <button
               id="fullscreen-play-pause-btn"
               type="button"
-              className="fs-play-btn"
+              className={`fs-play-btn ${showLoadingState ? "loading" : ""}`}
               style={{
-                backgroundColor: '#ffffff',
-                boxShadow: `0 6px 25px ${palette?.glowRgba || 'rgba(255,255,255,0.4)'}`,
+                backgroundColor: "#ffffff",
+                boxShadow: `0 6px 25px ${palette?.glowRgba || "rgba(255,255,255,0.4)"}`,
               }}
-              onClick={onPlayPause}
-              title={isPlaying ? 'Pause' : 'Play'}
+              onClick={showLoadingState ? undefined : onPlayPause}
+              title={
+                showLoadingState ? "Loading..." : isPlaying ? "Pause" : "Play"
+              }
+              disabled={showLoadingState}
             >
-              {isPlaying ? (
+              {showLoadingState ? (
+                <span className="play-button-spinner fs-spinner" />
+              ) : isPlaying ? (
                 <Pause size={30} color="#080808" />
               ) : (
                 <Play size={30} color="#080808" style={{ marginLeft: 3 }} />
@@ -288,11 +312,15 @@ export function FullScreenPlayer({
 
             <button
               type="button"
-              className={`fs-ctrl-btn ${repeatMode !== 'off' ? 'active' : ''}`}
+              className={`fs-ctrl-btn ${repeatMode !== "off" ? "active" : ""}`}
               onClick={onToggleRepeat}
               title={`Repeat: ${repeatMode}`}
             >
-              {repeatMode === 'one' ? <Repeat1 size={20} /> : <Repeat size={20} />}
+              {repeatMode === "one" ? (
+                <Repeat1 size={20} />
+              ) : (
+                <Repeat size={20} />
+              )}
             </button>
           </div>
 
@@ -313,9 +341,13 @@ export function FullScreenPlayer({
                 type="button"
                 className="fs-icon-btn"
                 onClick={onToggleMute}
-                title={isMuted ? 'Unmute' : 'Mute'}
+                title={isMuted ? "Unmute" : "Mute"}
               >
-                {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                {isMuted || volume === 0 ? (
+                  <VolumeX size={18} />
+                ) : (
+                  <Volume2 size={18} />
+                )}
               </button>
               <input
                 type="range"

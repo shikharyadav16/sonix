@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Header } from './components/Header';
-import { HomePage } from './components/HomePage';
-import { SearchResults } from './components/SearchResults';
-import { PlayerBar } from './components/PlayerBar';
-import { LyricsView } from './components/LyricsView';
-import { FullScreenPlayer } from './components/FullScreenPlayer';
-import { searchMusic, fetchSongDetails, fetchSongLyrics } from './services/api';
-import { parseLrc } from './utils/lrcParser';
-import { extractArtworkColors } from './utils/colorExtractor';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Header } from "./components/Header";
+import { HomePage } from "./components/HomePage";
+import { SearchResults } from "./components/SearchResults";
+import { PlayerBar } from "./components/PlayerBar";
+import { LyricsView } from "./components/LyricsView";
+import { FullScreenPlayer } from "./components/FullScreenPlayer";
+import { searchMusic, fetchSongDetails, fetchSongLyrics } from "./services/api";
+import { parseLrc } from "./utils/lrcParser";
+import { extractArtworkColors } from "./utils/colorExtractor";
 
 export function App() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [searchData, setSearchData] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isHomeMode, setIsHomeMode] = useState(true);
@@ -22,13 +22,15 @@ export function App() {
   // Playback state
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isTrackLoading, setIsTrackLoading] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.85);
   const [isMuted, setIsMuted] = useState(false);
-  const [repeatMode, setRepeatMode] = useState('off'); // 'off' | 'all' | 'one'
+  const [repeatMode, setRepeatMode] = useState("off"); // 'off' | 'all' | 'one'
   const [isShuffle, setIsShuffle] = useState(false);
-  const [selectedQuality, setSelectedQuality] = useState('320kbps');
+  const [selectedQuality, setSelectedQuality] = useState("320kbps");
   const [availableQualities, setAvailableQualities] = useState([]);
   const [queue, setQueue] = useState([]);
 
@@ -80,14 +82,14 @@ export function App() {
         setQueue(data.data.songs.results);
       }
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error("Search failed:", err);
     } finally {
       setIsSearching(false);
     }
   };
 
   const handleHomeClick = () => {
-    setQuery('');
+    setQuery("");
     setIsHomeMode(true);
   };
 
@@ -105,9 +107,13 @@ export function App() {
 
     const songId = song.id;
     const title = song.title || song.name;
-    const artist = song.primaryArtists || song.singers || song.artist || 'Unknown';
-    const album = song.album || '';
-    const artwork = song.image?.find((i) => i.quality === '500x500')?.url || song.image?.[0]?.url || '';
+    const artist =
+      song.primaryArtists || song.singers || song.artist || "Unknown";
+    const album = song.album || "";
+    const artwork =
+      song.image?.find((i) => i.quality === "500x500")?.url ||
+      song.image?.[0]?.url ||
+      "";
 
     // If clicking current song, toggle play/pause
     if (currentTrack?.id === songId && audioRef.current?.src) {
@@ -119,6 +125,34 @@ export function App() {
       return;
     }
 
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      audioRef.current.removeAttribute("src");
+      audioRef.current.load();
+    }
+
+    setCurrentTime(0);
+    setDuration(0);
+    setIsPlaying(false);
+    setIsBuffering(false);
+
+    const previewTrack = {
+      id: songId,
+      title: title,
+      artist: artist,
+      album: album,
+      artwork,
+      duration: song.duration || 0,
+      streamUrl: null,
+      downloadUrls: [],
+      rawDetails: null,
+    };
+
+    setCurrentTrack(previewTrack);
+    setIsPlaying(false);
+    setIsTrackLoading(true);
+    setIsBuffering(false);
     setIsLoadingLyrics(true);
 
     try {
@@ -129,23 +163,31 @@ export function App() {
 
       // 2. Fetch song details (to get .mp4 audio stream URLs)
       let details = null;
-      if (songId && !songId.startsWith('suggested-') && !songId.startsWith('top-') && !songId.startsWith('pl-')) {
+      if (
+        songId &&
+        !songId.startsWith("suggested-") &&
+        !songId.startsWith("top-") &&
+        !songId.startsWith("pl-")
+      ) {
         try {
           details = await fetchSongDetails(songId);
-        } catch { }
+        } catch {}
       }
 
       // If not resolved by direct ID, search live to get real playable .mp4 stream
       if (!details) {
         try {
-          const searchQuery = `${title} ${artist && artist !== 'Artist' ? artist : ''}`.trim();
+          const searchQuery =
+            `${title} ${artist && artist !== "Artist" ? artist : ""}`.trim();
           const searchRes = await searchMusic(searchQuery);
-          const matchedSong = searchRes?.data?.songs?.results?.[0] || searchRes?.data?.topQuery?.results?.[0];
+          const matchedSong =
+            searchRes?.data?.songs?.results?.[0] ||
+            searchRes?.data?.topQuery?.results?.[0];
           if (matchedSong?.id) {
             details = await fetchSongDetails(matchedSong.id);
           }
         } catch (e) {
-          console.warn('Fallback search resolution failed:', e);
+          console.warn("Fallback search resolution failed:", e);
         }
       }
 
@@ -154,7 +196,8 @@ export function App() {
 
       const streamUrl = pickAudioUrl(downloadUrls, selectedQuality);
 
-      const highResArt = details?.image?.find((i) => i.quality === '500x500')?.url || artwork;
+      const highResArt =
+        details?.image?.find((i) => i.quality === "500x500")?.url || artwork;
 
       const newTrack = {
         id: details?.id || songId,
@@ -173,10 +216,21 @@ export function App() {
       if (audioRef.current && streamUrl) {
         audioRef.current.src = streamUrl;
         audioRef.current.load();
-        audioRef.current.play().then(() => setIsPlaying(true)).catch((err) => {
-          console.warn('Auto-play blocked or failed:', err);
-          setIsPlaying(false);
-        });
+        audioRef.current
+          .play()
+          .then(() => {
+            setIsPlaying(true);
+            setIsTrackLoading(false);
+            setIsBuffering(false);
+          })
+          .catch((err) => {
+            console.warn("Auto-play blocked or failed:", err);
+            setIsPlaying(false);
+            setIsTrackLoading(false);
+            setIsBuffering(false);
+          });
+      } else {
+        setIsTrackLoading(false);
       }
 
       // 3. Fetch song lyrics
@@ -194,9 +248,12 @@ export function App() {
         setParsedLyrics([]);
       }
     } catch (err) {
-      console.error('Failed to load song:', err);
+      console.error("Failed to load song:", err);
     } finally {
       setIsLoadingLyrics(false);
+      if (!audioRef.current || !audioRef.current.currentSrc) {
+        setIsTrackLoading(false);
+      }
     }
   };
 
@@ -208,6 +265,8 @@ export function App() {
     }
     setCurrentTime(0);
     setIsPlaying(false);
+    setIsTrackLoading(false);
+    setIsBuffering(false);
   };
 
   // Change Audio Quality (.mp4)
@@ -230,7 +289,7 @@ export function App() {
   // Download song (.mp4 / .m4a)
   const handleDownloadSong = async (song) => {
     let urlToDownload = null;
-    let filename = `${song.title || 'song'}.m4a`;
+    let filename = `${song.title || "song"}.m4a`;
 
     if (currentTrack?.id === song.id && currentTrack.streamUrl) {
       urlToDownload = currentTrack.streamUrl;
@@ -239,19 +298,22 @@ export function App() {
       try {
         const details = await fetchSongDetails(song.id);
         const urls = details?.downloadUrl || [];
-        urlToDownload = pickAudioUrl(urls, '320kbps');
-        const artistName = details?.artists?.primary?.[0]?.name || song.primaryArtists || 'Artist';
+        urlToDownload = pickAudioUrl(urls, "320kbps");
+        const artistName =
+          details?.artists?.primary?.[0]?.name ||
+          song.primaryArtists ||
+          "Artist";
         filename = `${artistName} - ${details?.name || song.title}.m4a`;
       } catch (e) {
-        console.error('Failed to get download URL:', e);
+        console.error("Failed to get download URL:", e);
       }
     }
 
     if (!urlToDownload) return;
 
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = urlToDownload;
-    a.target = '_blank';
+    a.target = "_blank";
     a.download = filename;
     document.body.appendChild(a);
     a.click();
@@ -273,10 +335,22 @@ export function App() {
 
   const handlePlayPause = () => {
     if (!audioRef.current) return;
+    if (isTrackLoading || isBuffering) return;
     if (isPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(console.error);
+      setIsTrackLoading(true);
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsTrackLoading(false);
+          setIsBuffering(false);
+        })
+        .catch((error) => {
+          console.warn("Play request failed:", error);
+          setIsTrackLoading(false);
+          setIsBuffering(false);
+        });
     }
   };
 
@@ -323,12 +397,12 @@ export function App() {
   }, [queue, currentTrack]);
 
   const handleSongEnded = () => {
-    if (repeatMode === 'one') {
+    if (repeatMode === "one") {
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(console.error);
       }
-    } else if (repeatMode === 'all') {
+    } else if (repeatMode === "all") {
       handleNext();
     } else {
       const currentIndex = queue.findIndex((s) => s.id === currentTrack?.id);
@@ -341,48 +415,49 @@ export function App() {
   };
 
   const handleToggleRepeat = () => {
-    if (repeatMode === 'off') setRepeatMode('all');
-    else if (repeatMode === 'all') setRepeatMode('one');
-    else setRepeatMode('off');
+    if (repeatMode === "off") setRepeatMode("all");
+    else if (repeatMode === "all") setRepeatMode("one");
+    else setRepeatMode("off");
   };
 
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+      if (["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName))
+        return;
 
-      if (e.code === 'Space') {
+      if (e.code === "Space") {
         e.preventDefault();
         handlePlayPause();
-      } else if (e.code === 'ArrowRight') {
+      } else if (e.code === "ArrowRight") {
         e.preventDefault();
         handleSeek(Math.min(duration, currentTime + 5));
-      } else if (e.code === 'ArrowLeft') {
+      } else if (e.code === "ArrowLeft") {
         e.preventDefault();
         handleSeek(Math.max(0, currentTime - 5));
-      } else if (e.code === 'ArrowUp') {
+      } else if (e.code === "ArrowUp") {
         e.preventDefault();
         handleVolumeChange(Math.min(1, volume + 0.1));
-      } else if (e.code === 'ArrowDown') {
+      } else if (e.code === "ArrowDown") {
         e.preventDefault();
         handleVolumeChange(Math.max(0, volume - 0.1));
-      } else if (e.key === 'm' || e.key === 'M') {
+      } else if (e.key === "m" || e.key === "M") {
         handleToggleMute();
-      } else if (e.key === 'l' || e.key === 'L') {
+      } else if (e.key === "l" || e.key === "L") {
         setShowLyrics((prev) => !prev);
-      } else if (e.key === 'f' || e.key === 'F') {
+      } else if (e.key === "f" || e.key === "F") {
         if (currentTrack) setIsFullScreen((prev) => !prev);
-      } else if (e.key === 'Escape') {
+      } else if (e.key === "Escape") {
         setIsFullScreen(false);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentTime, duration, volume, isMuted, isPlaying, currentTrack]);
 
   return (
-    <div className={`app-shell ${!currentTrack ? 'no-player' : ''}`}>
+    <div className={`app-shell ${!currentTrack ? "no-player" : ""}`}>
       {currentTrack && palette?.glowRgba && (
         <div
           className="ambient-glow"
@@ -397,8 +472,24 @@ export function App() {
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => {
+          setIsPlaying(true);
+          setIsTrackLoading(false);
+          setIsBuffering(false);
+        }}
+        onPause={() => {
+          setIsPlaying(false);
+          setIsTrackLoading(false);
+          setIsBuffering(false);
+        }}
+        onWaiting={() => {
+          setIsBuffering(true);
+          setIsTrackLoading(false);
+        }}
+        onCanPlay={() => {
+          setIsBuffering(false);
+          setIsTrackLoading(false);
+        }}
         onEnded={handleSongEnded}
         preload="auto"
       />
@@ -416,7 +507,9 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="main-content">
-        <div className={`content-grid ${showLyrics && currentTrack ? 'with-lyrics' : ''}`}>
+        <div
+          className={`content-grid ${showLyrics && currentTrack ? "with-lyrics" : ""}`}
+        >
           {/* Home View or Search View */}
           {isHomeMode ? (
             <HomePage
@@ -463,6 +556,8 @@ export function App() {
       <PlayerBar
         currentTrack={currentTrack}
         isPlaying={isPlaying}
+        isTrackLoading={isTrackLoading}
+        isBuffering={isBuffering}
         currentTime={currentTime}
         duration={duration}
         volume={volume}
@@ -493,6 +588,8 @@ export function App() {
         onClose={() => setIsFullScreen(false)}
         currentTrack={currentTrack}
         isPlaying={isPlaying}
+        isTrackLoading={isTrackLoading}
+        isBuffering={isBuffering}
         currentTime={currentTime}
         duration={duration}
         volume={volume}

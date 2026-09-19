@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   Play,
   Pause,
@@ -12,12 +12,14 @@ import {
   FileText,
   Download,
   Maximize2,
-} from 'lucide-react';
-import { formatTime } from '../utils/lrcParser';
+} from "lucide-react";
+import { formatTime } from "../utils/lrcParser";
 
 export function PlayerBar({
   currentTrack,
   isPlaying,
+  isTrackLoading,
+  isBuffering,
   currentTime,
   duration,
   volume,
@@ -52,19 +54,22 @@ export function PlayerBar({
   };
 
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const showLoadingState = Boolean(isTrackLoading || isBuffering);
 
   if (!currentTrack) {
     return null;
   }
 
-  const artworkUrl = currentTrack.artwork || 'https://www.jiosaavn.com/_i/3.0/artist-default-music.png';
+  const artworkUrl =
+    currentTrack.artwork ||
+    "https://www.jiosaavn.com/_i/3.0/artist-default-music.png";
 
   return (
     <footer
       className="player-bar active"
       style={{
-        background: palette?.barGradient || 'rgba(10, 12, 22, 0.96)',
-        borderColor: palette?.glowRgba || 'rgba(255, 255, 255, 0.1)',
+        background: palette?.barGradient || "rgba(10, 12, 22, 0.96)",
+        borderColor: palette?.glowRgba || "rgba(255, 255, 255, 0.1)",
       }}
     >
       {/* Mobile Top Razor Progress Indicator (0px vertical space, shows live progress) */}
@@ -73,7 +78,7 @@ export function PlayerBar({
           className="mobile-progress-fill"
           style={{
             width: `${progressPercent}%`,
-            background: palette?.primaryRgb || '#ffffff',
+            background: palette?.primaryRgb || "#ffffff",
           }}
         />
       </div>
@@ -91,7 +96,8 @@ export function PlayerBar({
             className="player-thumb"
             onError={(e) => {
               e.currentTarget.onerror = null;
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80';
+              e.currentTarget.src =
+                "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=80";
             }}
           />
           <div className="player-thumb-overlay">
@@ -114,7 +120,7 @@ export function PlayerBar({
           <button
             id="player-shuffle-btn"
             type="button"
-            className={`ctrl-btn ${isShuffle ? 'active' : ''}`}
+            className={`ctrl-btn ${isShuffle ? "active" : ""}`}
             onClick={onToggleShuffle}
             title="Shuffle"
           >
@@ -134,11 +140,24 @@ export function PlayerBar({
           <button
             id="player-play-pause-btn"
             type="button"
-            className="ctrl-btn-play"
-            onClick={onPlayPause}
-            title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
+            className={`ctrl-btn-play ${showLoadingState ? "loading" : ""}`}
+            onClick={showLoadingState ? undefined : onPlayPause}
+            title={
+              showLoadingState
+                ? "Loading..."
+                : isPlaying
+                  ? "Pause (Space)"
+                  : "Play (Space)"
+            }
+            disabled={showLoadingState}
           >
-            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginLeft: 2 }} />}
+            {showLoadingState ? (
+              <span className="play-button-spinner" />
+            ) : isPlaying ? (
+              <Pause size={22} />
+            ) : (
+              <Play size={22} style={{ marginLeft: 2 }} />
+            )}
           </button>
 
           <button
@@ -154,11 +173,15 @@ export function PlayerBar({
           <button
             id="player-repeat-btn"
             type="button"
-            className={`ctrl-btn ${repeatMode !== 'off' ? 'active' : ''}`}
+            className={`ctrl-btn ${repeatMode !== "off" ? "active" : ""}`}
             onClick={onToggleRepeat}
             title={`Repeat: ${repeatMode}`}
           >
-            {repeatMode === 'one' ? <Repeat1 size={17} /> : <Repeat size={17} />}
+            {repeatMode === "one" ? (
+              <Repeat1 size={17} />
+            ) : (
+              <Repeat size={17} />
+            )}
           </button>
         </div>
 
@@ -177,7 +200,7 @@ export function PlayerBar({
                 className="progress-fill"
                 style={{
                   width: `${progressPercent}%`,
-                  background: palette?.primaryRgb || '#ffffff',
+                  background: palette?.primaryRgb || "#ffffff",
                 }}
               />
             </div>
@@ -230,9 +253,13 @@ export function PlayerBar({
             type="button"
             className="ctrl-btn"
             onClick={onToggleMute}
-            title={isMuted ? 'Unmute (M)' : 'Mute (M)'}
+            title={isMuted ? "Unmute (M)" : "Mute (M)"}
           >
-            {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+            {isMuted || volume === 0 ? (
+              <VolumeX size={18} />
+            ) : (
+              <Volume2 size={18} />
+            )}
           </button>
           <input
             id="player-volume-slider"
@@ -273,11 +300,18 @@ export function PlayerBar({
         <button
           id="mobile-play-pause-btn"
           type="button"
-          className="ctrl-btn-play mobile-play-btn"
-          onClick={onPlayPause}
-          title={isPlaying ? 'Pause' : 'Play'}
+          className={`ctrl-btn-play mobile-play-btn ${showLoadingState ? "loading" : ""}`}
+          onClick={showLoadingState ? undefined : onPlayPause}
+          title={showLoadingState ? "Loading..." : isPlaying ? "Pause" : "Play"}
+          disabled={showLoadingState}
         >
-          {isPlaying ? <Pause size={20} /> : <Play size={20} style={{ marginLeft: 2 }} />}
+          {showLoadingState ? (
+            <span className="play-button-spinner" />
+          ) : isPlaying ? (
+            <Pause size={20} />
+          ) : (
+            <Play size={20} style={{ marginLeft: 2 }} />
+          )}
         </button>
 
         <button

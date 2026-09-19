@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, X, Music, FileText } from 'lucide-react';
+import React, { useState } from "react";
+import { Search, X, Music, FileText } from "lucide-react";
 
 export function Header({
   query,
@@ -13,7 +13,7 @@ export function Header({
   const [localInput, setLocalInput] = useState(query);
 
   React.useEffect(() => {
-    setLocalInput(query || '');
+    setLocalInput(query || "");
   }, [query]);
 
   const handleSubmit = (e) => {
@@ -25,14 +25,14 @@ export function Header({
   };
 
   const handleClear = () => {
-    setLocalInput('');
-    setQuery('');
+    setLocalInput("");
+    setQuery("");
     onHomeClick?.();
   };
 
   const handleBrandClick = () => {
-    setLocalInput('');
-    setQuery('');
+    setLocalInput("");
+    setQuery("");
     onHomeClick?.();
   };
 
@@ -55,7 +55,7 @@ export function Header({
             id="main-search-input"
             type="text"
             className="search-input"
-            placeholder="Search songs, artists, albums (e.g. 'Love Me Not')..."
+            placeholder="Search songs, artists, albums etc..."
             value={localInput}
             onChange={(e) => setLocalInput(e.target.value)}
           />

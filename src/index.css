@@ -14,10 +14,11 @@
   --text-primary: rgba(255, 255, 255, 0.88);
   --text-title: rgba(255, 255, 255, 0.82);
   --text-secondary: rgba(255, 255, 255, 0.55);
-  --text-muted: rgba(255, 255, 255, 0.40);
+  --text-muted: rgba(255, 255, 255, 0.4);
 
-  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display:
+    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -1593,7 +1594,9 @@ body {
   }
 
   .app-shell {
-    padding-bottom: calc(66px + env(safe-area-inset-bottom, 12px) + 24px) !important;
+    padding-bottom: calc(
+      66px + env(safe-area-inset-bottom, 12px) + 24px
+    ) !important;
   }
 }
 
@@ -1744,6 +1747,29 @@ body {
 
 .ctrl-btn-play:hover {
   transform: scale(1.08);
+}
+
+.ctrl-btn-play.loading,
+.fs-play-btn.loading {
+  opacity: 0.9;
+}
+
+.play-button-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(8, 8, 8, 0.18);
+  border-top-color: #080808;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+.fs-spinner {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+  border-color: rgba(8, 8, 8, 0.18);
+  border-top-color: #080808;
 }
 
 .progress-container {
@@ -2042,8 +2068,20 @@ body {
   padding: 40px 24px;
   text-align: center;
   scroll-behavior: smooth;
-  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 15%,
+    black 85%,
+    transparent 100%
+  );
   animation: fsFade 0.25s ease;
 }
 
@@ -2322,8 +2360,6 @@ body {
   justify-content: space-between;
   justify-content: center;
 }
-
-
 
 .fs-side-tools {
   display: flex;
