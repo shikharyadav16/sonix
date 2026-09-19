@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Info, X } from 'lucide-react';
+import React, { useState } from "react";
+import { Info, X } from "lucide-react";
 
 export function NoticeBanner() {
   const [isVisible, setIsVisible] = useState(true);
@@ -15,7 +15,7 @@ export function NoticeBanner() {
         <div className="notice-text-group">
           <span className="notice-heading">Notice</span>
           <p className="notice-message">
-            We can’t add new artists or songs here right now. Try <strong style={{ color: '#fef08a' }}>TuneFree</strong> for a wider variety of artists, songs and playlists that may not be available on ListenFree.
+            We can’t add new artists or songs here right now.
           </p>
         </div>
       </div>
