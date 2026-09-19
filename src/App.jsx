@@ -139,9 +139,8 @@ export function App() {
     [],
   );
 
-  const handlePlaySong = async (song) => {
+  const handlePlaySong = async (song, shouldLoadSuggestions = true) => {
     if (!song) return;
-    const shouldLoadSuggestions = true;
 
     const songId = song.id;
     const title = song.title || song.name;
@@ -443,15 +442,8 @@ export function App() {
         return;
       }
 
-      const freshSuggestions = await loadSuggestionQueue(
-        currentTrack.id,
-        currentTrack,
-      );
-      if (freshSuggestions.length > 0) {
-        const nextTrack = freshSuggestions[0];
-        await handlePlaySong(nextTrack);
-        return;
-      }
+      setIsPlaying(false);
+      return;
     }
 
     if (suggestionQueue.length > 0 && currentIndex === -1) {
@@ -468,8 +460,8 @@ export function App() {
     } else {
       nextIndex = indexInQueue >= queue.length - 1 ? 0 : indexInQueue + 1;
     }
-    handlePlaySong(queue[nextIndex]);
-  }, [queue, currentTrack, isShuffle, suggestionQueue, loadSuggestionQueue]);
+    handlePlaySong(queue[nextIndex], false);
+  }, [queue, currentTrack, isShuffle, suggestionQueue]);
 
   const handlePrev = useCallback(() => {
     if (songHistory.length > 1) {
