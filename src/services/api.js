@@ -41,21 +41,23 @@ export async function searchMusic(query) {
 
   try {
     const res = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        accept: '*/*',
+        accept: "*/*",
       },
     });
 
     const elapsed = Math.round(performance.now() - startTime);
 
     if (!res.ok) {
-      throw new Error(`Search request failed: HTTP ${res.status} ${res.statusText}`);
+      throw new Error(
+        `Search request failed: HTTP ${res.status} ${res.statusText}`,
+      );
     }
 
     const json = await res.json();
 
-    recordRequest('search', {
+    recordRequest("search", {
       url,
       query,
       status: res.status,
@@ -67,10 +69,10 @@ export async function searchMusic(query) {
     return json;
   } catch (err) {
     const elapsed = Math.round(performance.now() - startTime);
-    recordRequest('search', {
+    recordRequest("search", {
       url,
       query,
-      status: 'Error',
+      status: "Error",
       latencyMs: elapsed,
       response: null,
       error: err.message,
@@ -91,22 +93,24 @@ export async function fetchSongDetails(songId) {
 
   try {
     const res = await fetch(url, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        accept: '*/*',
+        accept: "*/*",
       },
     });
 
     const elapsed = Math.round(performance.now() - startTime);
 
     if (!res.ok) {
-      throw new Error(`Song details request failed: HTTP ${res.status} ${res.statusText}`);
+      throw new Error(
+        `Song details request failed: HTTP ${res.status} ${res.statusText}`,
+      );
     }
 
     const json = await res.json();
     const songData = json?.data?.[0] || null;
 
-    recordRequest('song', {
+    recordRequest("song", {
       url,
       songId,
       status: res.status,
@@ -120,10 +124,10 @@ export async function fetchSongDetails(songId) {
     return songData;
   } catch (err) {
     const elapsed = Math.round(performance.now() - startTime);
-    recordRequest('song', {
+    recordRequest("song", {
       url,
       songId,
-      status: 'Error',
+      status: "Error",
       latencyMs: elapsed,
       response: null,
       songData: null,
@@ -137,7 +141,7 @@ export async function fetchSongDetails(songId) {
  * Clean artist name (remove 'feat.', '&', etc. for better LRCLIB hit rate)
  */
 function cleanArtist(artist) {
-  if (!artist) return '';
+  if (!artist) return "";
   return artist.split(/,|&|feat\.|ft\./i)[0].trim();
 }
 
@@ -145,16 +149,21 @@ function cleanArtist(artist) {
  * 3. Fetch About the Song / Lyrics Request
  * Queries LRCLIB for lyrics and song metadata
  */
-export async function fetchSongLyrics({ trackName, artistName, albumName, duration }) {
+export async function fetchSongLyrics({
+  trackName,
+  artistName,
+  albumName,
+  duration,
+}) {
   if (!trackName || !artistName) return null;
 
   const primaryArtist = cleanArtist(artistName);
 
   const params = new URLSearchParams();
-  params.set('track_name', trackName);
-  params.set('artist_name', primaryArtist);
-  if (albumName) params.set('album_name', albumName);
-  if (duration) params.set('duration', String(Math.round(duration)));
+  params.set("track_name", trackName);
+  params.set("artist_name", primaryArtist);
+  if (albumName) params.set("album_name", albumName);
+  if (duration) params.set("duration", String(Math.round(duration)));
 
   const url = `/api/lrclib/get?${params.toString()}`;
   const directUrl = `https://lrclib.net/api/get?${params.toString()}`;
@@ -165,7 +174,7 @@ export async function fetchSongLyrics({ trackName, artistName, albumName, durati
   let status = 200;
 
   try {
-    let res = await fetch(url, { headers: { accept: '*/*' } });
+    let res = await fetch(url, { headers: { accept: "*/*" } });
     if (!res.ok) {
       // Try direct call (LRCLIB supports CORS *)
       res = await fetch(directUrl);
@@ -187,22 +196,22 @@ export async function fetchSongLyrics({ trackName, artistName, albumName, durati
 
     const elapsed = Math.round(performance.now() - startTime);
 
-    recordRequest('lyrics', {
+    recordRequest("lyrics", {
       url: responseData ? directUrl : url,
       params: { trackName, artistName: primaryArtist, albumName, duration },
       status: responseData ? 200 : 404,
       latencyMs: elapsed,
       response: responseData,
-      error: responseData ? null : 'No lyrics found on LRCLIB',
+      error: responseData ? null : "No lyrics found on LRCLIB",
     });
 
     return responseData;
   } catch (err) {
     const elapsed = Math.round(performance.now() - startTime);
-    recordRequest('lyrics', {
+    recordRequest("lyrics", {
       url: directUrl,
       params: { trackName, artistName: primaryArtist, albumName, duration },
-      status: 'Error',
+      status: "Error",
       latencyMs: elapsed,
       response: null,
       error: err.message,

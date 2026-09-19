@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/api/search",
+      "destination": "https://music-api.albatross0071.workers.dev/api/search"
+    },
+    {
+      "source": "/api/songs/:id",
+      "destination": "https://music-api.albatross0071.workers.dev/api/songs/:id"
+    },
+    {
+      "source": "/api/lrclib/:path*",
+      "destination": "https://lrclib.net/api/:path*"
+    }
+  ]
+}
