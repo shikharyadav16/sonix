@@ -6,6 +6,10 @@
       "destination": "https://music-api.albatross0071.workers.dev/api/search"
     },
     {
+      "source": "/api/songs/:id/suggestions",
+      "destination": "https://music-api.albatross0071.workers.dev/api/songs/:id/suggestions"
+    },
+    {
       "source": "/api/songs/:id",
       "destination": "https://music-api.albatross0071.workers.dev/api/songs/:id"
     },
